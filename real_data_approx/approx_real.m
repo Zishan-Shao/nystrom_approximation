@@ -9,8 +9,8 @@ function [approx_G] = approx_real(A, c, k, n)
     D = eye(c); % (c x c) rescaling matrix, initialized to identity
 
     % Compute probabilities for weighted sampling based on the diagonal of A^TA
-    diag_AAT = diag(A' * A);
-    probabilities = diag_AAT ./ sum(diag_AAT); % normalize to get probabilities
+    sq_sum = diag(A' * A);
+    probabilities = sq_sum ./ sum(sq_sum); % normalize to get probabilities
 
     % Sample columns of A according to the probabilities
     for t = 1:c
@@ -29,7 +29,8 @@ function [approx_G] = approx_real(A, c, k, n)
 
     % Compute W using only the selected columns of A^TA
     % Do not form W_k explicitly. You can just perform C * U * sigma_k_inv * V^T * C^T
-    W = D * ((S' * A') * (A * S)) * D;
+    %W = D * ((S' * A') * (A * S)) * D;
+    W = D * S' * C;
 
     % Compute the best rank-k approximation to W using svds
     [U, Sigma, V] = svds(W, k);
