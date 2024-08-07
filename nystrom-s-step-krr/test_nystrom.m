@@ -27,16 +27,23 @@ freq = n;
 opt.kernel = 'linear';
 opt.ref_sol = a_opt;
 
-%disp('KRR begins')
-res = nystrom_krr(A', b, lambda, blksize, maxit, tol, seed, freq, opt);
 
-%disp('CA-KRR begins')
+% nystrom parameters
+k = ceil(blksize * 0.8);
+sk = floor(k * s * 0.05);
+osfct = 1.5;
 
+
+disp('KRR begins')
+%res = nystrom_krr(A', b, k, osfct, lambda, blksize, maxit, tol, seed, freq, opt);
+
+disp('======================')
+disp('CA-KRR begins')
 %opt.ref_del_a = res.del_a;
 %opt.ref_idx = res.idx;
 %opt.ref_r = res.r;
 %opt.ref_alpha = res.ref_alpha;
-ca_res = nystrom_s_step_krr(A', b, lambda, blksize, s, maxit, tol, seed, freq, opt);
+ca_res = nystrom_s_step_krr(A', b, sk, osfct, lambda, blksize, s, maxit, tol, seed, freq, opt);
 
 
 fprintf('[Linear] blksize = %d, s = 1, Relative solution error: %0.16g\n', blksize, norm(res.alpha - a_opt)/norm(a_opt))

@@ -1,4 +1,4 @@
-function [ results ] = nystrom_krr(A, b, lambda, blksize, maxit, tol, seed, freq, opt)
+function [ results ] = nystrom_krr(A, b, k, osfct, lambda, blksize, maxit, tol, seed, freq, opt)
 %UNTITLED2 Summary of this function goes here
 %   Detailed explanation goes here
 rng(seed);
@@ -37,9 +37,11 @@ results.sol_err = norm(alpha-opt.ref_sol)/norm(opt.ref_sol);
             % In this case, blksize*s should be much larger than the size of
             % the features and the matrix will be in low rank due to
             % repeated selection of observation
-            k = rank(full(A(:,idx)));
-            c = k * 2;
-            M = approx_linear(A(:,idx),c,k,max(size(A(:,idx))));
+            %k = rank(full(A(:,idx)));
+            %c = k * 2;
+            c = floor(k * osfct); 
+            %M = approx_linear(A(:,idx),c,k,max(size(A(:,idx))));
+            M = approx_linear(A(:,idx),c,k,blksize); % end up with a [s*blksize, s*blksize] matrix
             %disp(full(M));
         elseif(strcmpi(opt.kernel, 'gauss'))
             v = gaussian(A(:,idx), A, opt.gamma);
@@ -69,7 +71,8 @@ results.sol_err = norm(alpha-opt.ref_sol)/norm(opt.ref_sol);
         
         if(mod(iter, freq) == 0)
             results.sol_err(end+1) = norm(alpha - opt.ref_sol)/norm(opt.ref_sol);
-            results.sol_err(end)
+            %results.sol_err(end)
+            fprintf('KRR soultion error (iter %d): %0.16g\n', iter, results.sol_err(end))
             
             if(results.sol_err(end) <= tol)
                 results.alpha = alpha;
@@ -84,9 +87,9 @@ results.sol_err = norm(alpha-opt.ref_sol)/norm(opt.ref_sol);
 end
 
 
-%function k = linear(u, v)
-%    k = u'*v;
-%end
+function k = linear(u, v)
+    k = u'*v;
+end
 
 function k = poly(u, v, d)
     k = (u'*v).^d;

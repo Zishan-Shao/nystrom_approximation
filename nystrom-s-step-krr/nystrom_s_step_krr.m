@@ -1,4 +1,4 @@
-function [ results ] = nystrom_s_step_krr(A, b, lambda, blksize, s, maxit, tol, seed, freq, opt)
+function [ results ] = nystrom_s_step_krr(A, b, k, osfct, lambda, blksize, s, maxit, tol, seed, freq, opt)
 %UNTITLED2 Summary of this function goes here
 %   Detailed explanation goes here
 rng(seed);
@@ -41,9 +41,11 @@ results.sol_err = norm(alpha-opt.ref_sol)/norm(opt.ref_sol);
             
             % This kernel can be approximated, as it is actually e^T AA' e,
             % so SPSD
-            k = rank(full(A(:,idx)));
-            c = k * 2;
-            Ms = approx_linear(A(:,idx),c,k,max(size(A(:,idx)))); % end up with a [s*blksize, s*blksize] matrix
+            %k = rank(full(A(:,idx)));
+            %c = k * 2; 
+            c = floor(k * osfct); 
+            %Ms = approx_linear(A(:,idx),c,k,max(size(A(:,idx)))); % end up with a [s*blksize, s*blksize] matrix
+            Ms = approx_linear(A(:,idx),c,k,s*blksize); % end up with a [s*blksize, s*blksize] matrix
             % Ms will return a [s*blksize, s*blksize] matrix
 
         elseif(strcmpi(opt.kernel, 'gauss'))
@@ -105,7 +107,7 @@ results.sol_err = norm(alpha-opt.ref_sol)/norm(opt.ref_sol);
                     tmp_alpha(idx_s) = tmp_alpha(idx_s) + del_a(ptr_start:ptr_end);
                 end
                 results.sol_err(end + 1) = norm(tmp_alpha - opt.ref_sol)/norm(opt.ref_sol);
-                fprintf('soultion error: %0.16g\n', results.sol_err(end))
+                fprintf('CA-KRR soultion error (iter %d): %0.16g\n', iter, results.sol_err(end))
                 
                 
                 if(results.sol_err(end) <= tol)
@@ -159,9 +161,9 @@ results.sol_err = norm(alpha-opt.ref_sol)/norm(opt.ref_sol);
 end
 
 
-%function k = linear(u, v)
-%    k = u'*v;
-%end
+function k = linear(u, v)
+    k = u'*v;
+end
 
 function k = poly(u, v, d)
     k = (u'*v).^d;
