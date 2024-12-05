@@ -1,0 +1,63 @@
+function [alpha, J] = nystrom_kernel_bcd(X, Y, num_epoch, p, blksize, lambda, lambda_p, gamma, seed)
+    
+    rng(seed);
+
+    n = size(X, 1);    % Num obs
+    k = 1;             % Num classes (assume binary in this case)
+
+    % Initialization
+    alpha = zeros(p, k);
+    R = zeros(n, k); % this is the residual
+
+    % Randomly draw p samples without replacement, p in 1 ... n
+    J = randperm(n, p)';
+
+    % Partition J into p/b blocks I_1, ..., I_{p/b}
+    num_blocks = p / blksize;
+    if mod(p, blksize) ~= 0
+        error('p must be divisible by b.');
+    end
+    I = reshape(J, b, num_blocks)';  % I is num_blocks x b
+
+    for epoch = 1:num_epoch
+        fprintf('Epoch %d/%d\n', epoch, num_epoch);
+        % Randomly permute block indices (pi)
+        pi_perm = randperm(num_blocks);
+
+        for i = 1:num_blocks
+            % Block indices B
+            B = ((pi_perm(i)-1)*b + 1) : (pi_perm(i)*b);
+            alpha_b = alpha(B, :); % Extract block coefficients alpha_b
+
+            % I_{π_i} is I(pi(i), :)
+            I_pi_i = I(pi_perm(i), :)'; % I_{}
+
+            % Selector matrix S_b ∈ ℝ^{n × b}
+            S_b = sparse(I_pi_i, 1:b, 1, n, b);
+
+            % Compute kernel block K_b ∈ ℝ^{n × b}
+            K_b = kernel_function(X, X(I_pi_i, :), gamma);
+
+            % Update residual R ← R - (K_b + nλ′ S_b) α_b
+            R = R - (K_b + n*lambda_p*S_b) * alpha_b;
+
+            % Subblock K_{bb} ← K_b(I_{π_i}, :)
+            K_bb = K_b(I_pi_i, :);
+
+            % Left-hand side matrix: LHS = (K_b^T K_b + nλ K_{bb} + nλ′ I_b)
+            LHS = K_b' * K_b + n*lambda * K_bb + n*lambda_p * eye(b);
+
+            % Right-hand side vector: RHS = K_b^T (Y - R)
+            RHS = K_b' * (Y - R);
+
+            % Solve for α′_b: LHS * α′_b = RHS
+            alpha_b_new = LHS \ RHS;
+
+            % Update residual R ← R + (K_b + nλ′ S_b) α′_b
+            R = R + (K_b + n*lambda_p*S_b) * alpha_b_new;
+
+            % Update α(B) ← α′_b
+            alpha(B, :) = alpha_b_new;
+        end
+    end
+end
