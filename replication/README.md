@@ -1,0 +1,1 @@
+the new test folder contains for current the most coherent implementation of paper's algorithm, run test.m will run nystrom_kernel_bcd.m and full_kernel_bcd.m, then make comparisons between each. The data file may need to be adjusted, all data are available on libsvm dataset: https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/
